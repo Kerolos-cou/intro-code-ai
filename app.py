@@ -20,26 +20,21 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- محرك البحث عن الموديل الشغال ---
-def get_ready_model():
+# --- إعداد الذكاء الاصطناعي (أكثر استقراراً) ---
+def initialize_ai():
     try:
-        API_KEY = st.secrets["GEMINI_API_KEY"]
-        genai.configure(api_key=API_KEY)
-        
-        # بنجرب الموديلات المتاحة بالترتيب لضمان التشغيل
-        for model_name in ['gemini-1.5-flash', 'gemini-pro', 'models/gemini-pro']:
-            try:
-                m = genai.GenerativeModel(model_name)
-                # تجربة وهمية للتأكد من الصلاحية
-                return m
-            except:
-                continue
-        return None
+        if "GEMINI_API_KEY" in st.secrets:
+            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+            # هنستخدم gemini-pro لأنه الأكثر استقراراً حالياً لتجنب خطأ الـ 404
+            return genai.GenerativeModel('gemini-pro')
+        else:
+            st.error("المفتاح السري (API Key) غير موجود في الإعدادات.")
+            return None
     except Exception as e:
-        st.error(f"مشكلة في الإعدادات السرية: {e}")
+        st.error(f"خطأ في الاتصال: {e}")
         return None
 
-model = get_ready_model()
+model = initialize_ai()
 
 # --- واجهة التطبيق ---
 st.title("🚀 Intro Code")
@@ -54,8 +49,10 @@ if st.button("الحصول على عرض سعر فوري ✨"):
     if name and msg and model:
         with st.spinner('جاري تحضير العرض...'):
             try:
-                # طلب الرد
-                prompt = f"أنت مساعد مبيعات في Intro Code. العميل {name} مهتم بـ {service} ويقول: {msg}. اكتب رد بيعي جذاب واحترافي."
+                # برومبت يركز على الهوية الاحترافية لشركة Intro Code
+                prompt = (f"أنت خبير مبيعات في شركة Intro Code. العميل {name} يسأل عن {service}. "
+                         f"رسالته هي: {msg}. اكتب رد بيعي قصير، مقنع، واحترافي.")
+                
                 response = model.generate_content(prompt)
                 
                 st.markdown("---")
@@ -66,10 +63,8 @@ if st.button("الحصول على عرض سعر فوري ✨"):
                 pd.DataFrame([new_row]).to_csv("leads.csv", mode='a', header=not os.path.exists("leads.csv"), index=False)
                 
             except Exception as e:
-                st.error(f"عذراً، الموديل يواجه ضغطاً: {e}")
-    elif not model:
-        st.error("الموديل غير جاهز، تأكد من الـ API Key في الإعدادات.")
+                st.error("السيرفر مشغول حالياً، يرجى إعادة الضغط على الزر.")
     else:
-        st.warning("برجاء إكمال البيانات.")
+        st.warning("برجاء إدخال البيانات المطلوبة.")
 
 st.markdown("<br><p style='text-align: center; color: gray;'>© 2026 Intro Code</p>", unsafe_allow_html=True)
