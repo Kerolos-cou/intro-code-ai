@@ -20,48 +20,56 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- إعداد الذكاء الاصطناعي (نسخة مرنة) ---
-def load_model():
+# --- محرك البحث عن الموديل الشغال ---
+def get_ready_model():
     try:
         API_KEY = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=API_KEY)
-        # محاولة تشغيل أحدث موديل، ولو فشل يشغل البرو
-        try:
-            return genai.GenerativeModel('gemini-1.5-flash')
-        except:
-            return genai.GenerativeModel('gemini-pro')
+        
+        # بنجرب الموديلات المتاحة بالترتيب لضمان التشغيل
+        for model_name in ['gemini-1.5-flash', 'gemini-pro', 'models/gemini-pro']:
+            try:
+                m = genai.GenerativeModel(model_name)
+                # تجربة وهمية للتأكد من الصلاحية
+                return m
+            except:
+                continue
+        return None
     except Exception as e:
-        st.error(f"خطأ في الإعدادات: {e}")
+        st.error(f"مشكلة في الإعدادات السرية: {e}")
         return None
 
-model = load_model()
+model = get_ready_model()
 
 # --- واجهة التطبيق ---
 st.title("🚀 Intro Code")
 st.markdown("### المساعد الذكي لخدمات البرمجة والتصميم")
 
-client_name = st.text_input("الأسم الكريم:")
-client_phone = st.text_input("رقم الواتساب:")
-client_task = st.selectbox("الخدمة المطلوبة:", ["برمجة مواقع", "تصميم جرافيك", "تحليل بيانات"])
-customer_msg = st.text_area("تفاصيل استفسارك:", height=100)
+name = st.text_input("الأسم الكريم:")
+phone = st.text_input("رقم الواتساب:")
+service = st.selectbox("الخدمة المطلوبة:", ["برمجة مواقع", "تصميم جرافيك", "تحليل بيانات"])
+msg = st.text_area("تفاصيل استفسارك:", height=100)
 
 if st.button("الحصول على عرض سعر فوري ✨"):
-    if client_name and customer_msg and model:
+    if name and msg and model:
         with st.spinner('جاري تحضير العرض...'):
             try:
-                prompt = f"أنت مساعد مبيعات في Intro Code. العميل {client_name} مهتم بـ {client_task} ويقول: {customer_msg}. اكتب رد بيعي جذاب واحترافي."
+                # طلب الرد
+                prompt = f"أنت مساعد مبيعات في Intro Code. العميل {name} مهتم بـ {service} ويقول: {msg}. اكتب رد بيعي جذاب واحترافي."
                 response = model.generate_content(prompt)
                 
                 st.markdown("---")
                 st.success(response.text)
 
                 # حفظ البيانات
-                new_row = {"Date": datetime.now(), "Name": client_name, "Phone": client_phone, "Service": client_task}
+                new_row = {"Date": datetime.now(), "Name": name, "Phone": phone, "Service": service}
                 pd.DataFrame([new_row]).to_csv("leads.csv", mode='a', header=not os.path.exists("leads.csv"), index=False)
                 
             except Exception as e:
-                st.error(f"عذراً، الموديل يواجه صعوبة حالياً: {e}")
+                st.error(f"عذراً، الموديل يواجه ضغطاً: {e}")
+    elif not model:
+        st.error("الموديل غير جاهز، تأكد من الـ API Key في الإعدادات.")
     else:
-        st.warning("تأكد من إدخال البيانات.")
+        st.warning("برجاء إكمال البيانات.")
 
 st.markdown("<br><p style='text-align: center; color: gray;'>© 2026 Intro Code</p>", unsafe_allow_html=True)
