@@ -20,7 +20,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- الربط بالمفتاح والموديل ---
-API_KEY = "AIzaSyDWR3DIkMHgZZqh585X32H1I6j7v9SZaes"
+API_KEY = "AIzaSyDRDIJOo4XpcSpaPQXHSBZVic04zQjEeEM"
 genai.configure(api_key=API_KEY)
 # استخدام الموديل اللي أثبت كفاءة في حسابك
 model = genai.GenerativeModel('gemini-3-flash-preview')
